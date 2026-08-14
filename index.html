@@ -130,14 +130,19 @@
             padding: 6px 12px;
             border-radius: 8px;
             border: 1px solid #334155;
+            flex-wrap: wrap;
         }
-        .input-filtro-mes { 
+        .input-filtro-mes, .select-filtro-colab { 
             background: transparent; 
             color: white; 
             border: none; 
             font-size: 13px; 
             outline: none; 
             font-family: 'Inter', sans-serif; 
+        }
+        .select-filtro-colab option {
+            background-color: var(--bg-card);
+            color: white;
         }
 
         /* GRID DA DASHBOARD */
@@ -249,7 +254,7 @@
                 margin-left: 0;
                 width: 100vw;
                 padding: 15px;
-                padding-bottom: 80px; /* Espaço para o menu inferior no celular */
+                padding-bottom: 80px; /* Espaço para o menu inferior */
             }
 
             .slide-title { font-size: 18px; }
@@ -339,7 +344,10 @@
                 <div class="top-bar">
                     <div class="slide-title">Histórico de Movimentações</div>
                     <div class="filtro-topo-container">
-                        <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600;">Filtrar Mês:</span>
+                        <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600;">Integrante:</span>
+                        <select id="filtroColabHistorico" class="select-filtro-colab" onchange="carregarHistoricoGeral()"></select>
+                        
+                        <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; margin-left: 10px;">Mês:</span>
                         <input type="month" id="filtroMesHistorico" class="input-filtro-mes" onchange="carregarHistoricoGeral()">
                     </div>
                 </div>
@@ -436,6 +444,15 @@
             processarHoras();
         }
 
+        function formatarDataBR(dataISO) {
+            if (!dataISO) return "-";
+            const partes = dataISO.split('-');
+            if (partes.length === 3) {
+                return `${partes[2]}/${partes[1]}/${partes[0]}`;
+            }
+            return dataISO;
+        }
+
         async function carregarMembrosDaNuvem() {
             try {
                 const { data, error } = await _supabase.from('colaboradores').select('nome');
@@ -451,11 +468,16 @@
         function atualizarDropdowns() {
             const s1 = document.getElementById('userSelect');
             const s2 = document.getElementById('ajusteColab');
-            if(!s1 || !s2) return;
-            s1.innerHTML = ""; s2.innerHTML = "";
+            const s3 = document.getElementById('filtroColabHistorico');
+            
+            if(s1) s1.innerHTML = ""; 
+            if(s2) s2.innerHTML = "";
+            if(s3) s3.innerHTML = '<option value="">Todos os integrantes</option>';
+
             equipeMembros.forEach(m => {
-                s1.innerHTML += `<option value="${m}">${m}</option>`;
-                s2.innerHTML += `<option value="${m}">${m}</option>`;
+                if(s1) s1.innerHTML += `<option value="${m}">${m}</option>`;
+                if(s2) s2.innerHTML += `<option value="${m}">${m}</option>`;
+                if(s3) s3.innerHTML += `<option value="${m}">${m}</option>`;
             });
         }
 
@@ -677,7 +699,6 @@
             const mesFiltro = document.getElementById('filtroMesDashboard').value;
 
             try {
-                // Ordenação cronológica para contabilidade correta de débito/crédito
                 const { data } = await _supabase
                     .from('lancamentos')
                     .select('*')
@@ -690,10 +711,8 @@
                             const isNegativo = saldoStr.startsWith('-');
                             const puro = saldoStr.replace('+', '').replace('-', '');
                             
-                            // Aplica sinal positivo ou negativo nos minutos
                             const minutos = parseMin(puro) * (isNegativo ? -1 : 1);
                             
-                            // Soma algébrica contínua (compensação de saldo)
                             acumTotal[l.colaborador] += minutos;
 
                             if (mesFiltro && l.data && l.data.startsWith(mesFiltro)) {
@@ -746,10 +765,17 @@
 
         async function carregarHistoricoGeral() {
             const mesFiltro = document.getElementById('filtroMesHistorico').value;
+            const colabFiltro = document.getElementById('filtroColabHistorico').value;
+
             try {
                 let query = _supabase.from('lancamentos').select('*').order('data', { ascending: false });
+                
                 if (mesFiltro) {
                     query = query.gte('data', `${mesFiltro}-01`).lte('data', `${mesFiltro}-31`);
+                }
+                
+                if (colabFiltro) {
+                    query = query.eq('colaborador', colabFiltro);
                 }
                 
                 const { data } = await query;
@@ -761,10 +787,11 @@
                         const saldoStr = String(l.saldo || "");
                         const cls = saldoStr.startsWith('-') ? 'neg' : 'pos';
                         const obs = l.justificativa ? l.justificativa : '-';
+                        const dataFormatada = formatarDataBR(l.data);
                         
                         tbody.innerHTML += `<tr>
                             <td>${l.colaborador}</td>
-                            <td>${l.data || ""}</td>
+                            <td>${dataFormatada}</td>
                             <td>${l.jornada || ''}</td>
                             <td>${l.total_trabalhado || ""}</td>
                             <td><span class="badge ${cls}">${saldoStr}</span></td>
@@ -788,9 +815,10 @@
                 tbody.innerHTML = "";
                 if(data) {
                     data.forEach(l => {
+                        const dataFormatada = formatarDataBR(l.data);
                         tbody.innerHTML += `<tr>
                             <td>${l.colaborador}</td>
-                            <td>${l.data}</td>
+                            <td>${dataFormatada}</td>
                             <td>${l.saldo}</td>
                             <td><button class="btn-danger" onclick="deletarLancamento(${l.id})">Excluir</button></td>
                         </tr>`;
