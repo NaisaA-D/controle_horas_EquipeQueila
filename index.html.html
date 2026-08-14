@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Horas Pro - Nuvem V10</title>
+    
+    <!-- Ícone da Capa / Favicon da Aba -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><path fill='%2310b981' d='M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200zm61.8-104.4l-84.9-61.1c-3.1-2.2-4.9-5.9-4.9-9.7V116c0-6.6 5.4-12 12-12h32c6.6 0 12 5.4 12 12v117.7l67.7 48.7c5.4 3.9 6.5 11.4 2.6 16.8l-19.8 27.6c-3.9 5.3-11.4 6.5-16.8 2.6z'/></svg>">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght=600;700&family=Inter:wght=400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --accent: #10b981;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --danger: #ef4444;
+            --sidebar-bg: #020617;
+            --warning: #f59e0b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: #020617; font-family: 'Inter', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        
+        /* Força o ícone do calendário a ficar branco */
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="month"]::-webkit-calendar-picker-indicator {
+            filter: invert(1) !important;
+            -webkit-filter: invert(1) !important;
+            cursor: pointer !important;
+        }
+   
+        /* LAYOUT COMPACTO 1024x576 */
+        .slide-container { width: 1024px; height: 576px; background-color: var(--bg-dark); color: var(--text-main); position: relative; display: none; overflow: hidden; border: 1px solid #334155; border-radius: 10px; }
+        .slide-container.active { display: flex; }
+        
+        .sidebar { width: 70px; background-color: var(--sidebar-bg); height: 100%; display: flex; flex-direction: column; align-items: center; padding-top: 20px; gap: 15px; border-right: 1px solid #1e293b; z-index: 10; }
+        .nav-btn { width: 42px; height: 42px; border-radius: 10px; background: transparent; border: none; color: var(--text-dim); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .nav-btn:hover, .nav-btn.active { background: rgba(16, 185, 129, 0.15); color: var(--accent); }
+        
+        .main-content { flex-grow: 1; padding: 25px 35px; display: flex; flex-direction: column; overflow-y: auto; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #1e293b; padding-bottom: 10px; }
+        .slide-title { font-family: 'Urbanist', sans-serif; font-size: 22px; font-weight: 700; }
+        
+        .filtro-topo-container { display: flex; align-items: center; gap: 10px; }
+        .input-filtro-mes { background: #0f172a; color: white; border: 1px solid #334155; padding: 6px 10px; border-radius: 6px; font-size: 12px; outline: none; font-family: 'Inter', sans-serif; }
+
+        .painel-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 5px; }
+        .dupla-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: rgba(30, 41, 59, 0.5); padding: 12px; border-radius: 12px; border: 1px solid #1e293b; }
+        .colab-card { background: var(--bg-card); border: 1px solid #334155; padding: 14px; border-radius: 10px; display: flex; flex-direction: column; justify-content: space-between; min-height: 95px; }
+        .colab-name { font-size: 15px; font-weight: 600; color: var(--text-main); }
+        .colab-role { font-size: 11px; color: var(--text-dim); text-transform: uppercase; }
+        .colab-saldo { font-family: 'Urbanist', sans-serif; font-size: 22px; font-weight: 700; margin-top: 5px; text-align: right; }
+        
+        .colab-card.status-positivo { border-left: 4px solid var(--accent); }
+        .colab-card.status-negativo { border-left: 4px solid var(--danger); }
+        .colab-saldo.positivo-txt { color: var(--accent); }
+        .colab-saldo.negativo-txt { color: var(--danger); }
+
+        .sim-container { display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; }
+        .form-card { background: var(--bg-card); border: 1px solid #334155; padding: 18px; border-radius: 12px; margin-bottom: 10px; }
+        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
+        .input-group { margin-bottom: 10px; display: flex; flex-direction: column; }
+        .input-group label { font-size: 10px; text-transform: uppercase; color: var(--text-dim); font-weight: 600; margin-bottom: 4px; }
+        .input-group select, .input-group input { background: #0f172a; border: 1px solid #334155; color: white; padding: 8px 10px; border-radius: 6px; font-size: 13px; outline: none; }
+        
+        .resumo-card { background: #0b1329; border: 1px solid rgba(16, 185, 129, 0.2); padding: 20px; border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between; }
+        .metric-value { font-size: 32px; font-weight: 700; font-family: 'Urbanist', sans-serif; margin-top: 3px; }
+        .btn-submit { background: var(--accent); color: #020617; border: none; padding: 12px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%; text-transform: uppercase; }
+        
+        table { width: 100%; border-collapse: collapse; background: var(--bg-card); border-radius: 8px; overflow: hidden; border: 1px solid #334155; }
+        th { background: #111c30; padding: 10px 14px; font-size: 11px; text-transform: uppercase; color: var(--text-dim); text-align: left; }
+        td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid #334155; }
+        .badge { padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .badge.pos { background: rgba(16, 185, 129, 0.15); color: var(--accent); }
+        .badge.neg { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+        .btn-danger { background: var(--danger); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+        .btn-warning { background: var(--warning); color: #020617; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; }
+    </style>
+</head>
+<body onload="inicializarSistema()">
+
+    <div class="slide-container active" id="slide1">
+        <div class="sidebar">
+            <button class="nav-btn active" onclick="goToSlide(1)"><i class="fa-solid fa-table-columns"></i></button>
+            <button class="nav-btn" onclick="goToSlide(2)"><i class="fa-solid fa-calculator"></i></button>
+            <button class="nav-btn" onclick="goToSlide(3)"><i class="fa-solid fa-clock-rotate-left"></i></button>
+            <button class="nav-btn" onclick="goToSlide(4)"><i class="fa-solid fa-users-gear"></i></button>
+        </div>
+        <div class="main-content">
+            <div class="top-bar">
+                <div class="slide-title">Dashboard Coletiva de Saldos <span style="color:var(--accent); font-size:12px; margin-left: 10px;"><i class="fa-solid fa-cloud"></i> Sincronizado</span></div>
+                <div class="filtro-topo-container">
+                    <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600;">Filtrar Mês:</span>
+                    <input type="month" id="filtroMesDashboard" class="input-filtro-mes" onchange="carregarSaldosEfetivos()">
+                </div>
+            </div>
+            <div class="painel-grid" id="dashboardGrid"></div>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide2">
+        <div class="sidebar">
+            <button class="nav-btn" onclick="goToSlide(1)"><i class="fa-solid fa-table-columns"></i></button>
+            <button class="nav-btn active" onclick="goToSlide(2)"><i class="fa-solid fa-calculator"></i></button>
+            <button class="nav-btn" onclick="goToSlide(3)"><i class="fa-solid fa-clock-rotate-left"></i></button>
+            <button class="nav-btn" onclick="goToSlide(4)"><i class="fa-solid fa-users-gear"></i></button>
+        </div>
+        <div class="main-content">
+            <div class="top-bar"><div class="slide-title">Simulador e Lançamento de Horas</div></div>
+            <div class="sim-container">
+                <div class="form-card">
+                    <div class="input-row">
+                        <div class="input-group"><label>Colaborador</label><select id="userSelect"></select></div>
+                        <div class="input-group"><label>Data</label><input type="date" id="turnoData"></div>
+                    </div>
+                    <div class="input-group">
+                        <label>Jornada Padrão</label>
+                        <select id="diaTipo" onchange="atualizarLayoutTurno()">
+                            <option value="semana8h30">Segunda a Sexta (Carga: 08h 30m)</option>
+                            <option value="semana8h">Segunda a Sexta (Carga: 08h 00m)</option>
+                            <option value="semana7h30">Segunda a Sexta (Carga: 07h 30m)</option>
+                            <option value="aprendiz6h">Jovem Aprendiz (Carga: 06h 00m)</option>
+                            <option value="sabado4h">Sábado (Carga: 04h 00m)</option>
+                            <option value="extra">Fim de Semana (100% Extra)</option>
+                        </select>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group"><label>Entrada</label><input type="time" id="hEntrada" value="08:00" onchange="processarHoras()"></div>
+                        <div class="input-group"><label>Saída Intervalo</label><input type="time" id="hAlmocoS" value="12:00" onchange="processarHoras()"></div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group"><label>Retorno Intervalo</label><input type="time" id="hAlmocoR" value="13:00" onchange="processarHoras()"></div>
+                        <div class="input-group"><label>Saída Final</label><input type="time" id="hSaida" value="17:30" onchange="processarHoras()"></div>
+                    </div>
+                    <div class="input-group" style="margin-top: 10px;">
+                        <label>Justificativa / Observação</label>
+                        <input type="text" id="turnoJustificativa" placeholder="Ex: Atestado, Viagem, Esquecimento...">
+                    </div>
+                </div>
+                <div class="resumo-card">
+                    <div>
+                        <div style="font-size: 10px; text-transform: uppercase; color: var(--text-dim)">Total Realizado</div>
+                        <div class="metric-value" id="valTotal">00:00</div>
+                        <div style="font-size: 10px; text-transform: uppercase; color: var(--text-dim); margin-top: 15px;">Saldo do Lançamento</div>
+                        <div class="metric-value" id="valSaldo">00:00</div>
+                    </div>
+                    <button class="btn-submit" onclick="salvarTurno()">Gravar Turno na Nuvem</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide3">
+        <div class="sidebar">
+            <button class="nav-btn" onclick="goToSlide(1)"><i class="fa-solid fa-table-columns"></i></button>
+            <button class="nav-btn" onclick="goToSlide(2)"><i class="fa-solid fa-calculator"></i></button>
+            <button class="nav-btn active" onclick="goToSlide(3)"><i class="fa-solid fa-clock-rotate-left"></i></button>
+            <button class="nav-btn" onclick="goToSlide(4)"><i class="fa-solid fa-users-gear"></i></button>
+        </div>
+        <div class="main-content">
+            <div class="top-bar">
+                <div class="slide-title">Histórico de Movimentações</div>
+                <div class="filtro-topo-container">
+                    <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600;">Mês:</span>
+                    <input type="month" id="filtroMesHistorico" class="input-filtro-mes" onchange="carregarHistoricoGeral()">
+                </div>
+            </div>
+            <div style="overflow-y: auto; max-height: 440px;">
+                <table id="tabelaHistorico">
+                    <thead>
+                        <tr>
+                            <th>Colaborador</th>
+                            <th>Data</th>
+                            <th>Tipo</th>
+                            <th>Trabalhado</th>
+                            <th>Saldo Gerado</th>
+                            <th>Obs / Justificativa</th> <!-- COLUNA ACRESCENTADA -->
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide4">
+        <div class="sidebar">
+            <button class="nav-btn" onclick="goToSlide(1)"><i class="fa-solid fa-table-columns"></i></button>
+            <button class="nav-btn" onclick="goToSlide(2)"><i class="fa-solid fa-calculator"></i></button>
+            <button class="nav-btn" onclick="goToSlide(3)"><i class="fa-solid fa-clock-rotate-left"></i></button>
+            <button class="nav-btn active" onclick="goToSlide(4)"><i class="fa-solid fa-users-gear"></i></button>
+        </div>
+        <div class="main-content">
+            <div class="top-bar"><div class="slide-title">Painel Administrativo do Gerente</div></div>
+            <div id="lockScreen">
+                <div class="form-card" style="max-width: 350px; margin: 30px auto; text-align: center;">
+                    <div class="input-group">
+                        <label>Código de Segurança do Gerente</label>
+                        <input type="password" id="passGerente" style="text-align:center;" placeholder="Digite o código">
+                    </div>
+                    <button class="btn-submit" onclick="autenticarGerente()">Validar Acesso</button>
+                </div>
+            </div>
+            <div id="adminContent" style="display: none; grid-template-columns: 1fr 1.4fr; gap: 20px;">
+                <div>
+                    <div class="form-card">
+                        <h3 style="margin-bottom: 10px; font-size: 14px; color: var(--accent);">Incluir Novo Integrante</h3>
+                        <div class="input-group">
+                            <label>Nome do Colaborador</label>
+                            <input type="text" id="addNome" placeholder="Ex: Rafael">
+                        </div>
+                        <button class="btn-submit" onclick="adicionarMembro()">Adicionar Equipe</button>
+                    </div>
+                    <div class="form-card">
+                        <h3 style="margin-bottom: 10px; font-size: 14px; color: var(--accent);">Ajuste Manual</h3>
+                        <div class="input-group"><label>Colaborador</label><select id="ajusteColab"></select></div>
+                        <div class="input-row">
+                            <div class="input-group"><label>Sinal</label><select id="ajusteSinal"><option value="+">Crédito (+)</option><option value="-">Débito (-)</option></select></div>
+                            <div class="input-group"><label>Tempo</label><input type="time" id="ajusteTempo" value="01:00"></div>
+                        </div>
+                        <button class="btn-submit" onclick="salvarAjusteManual()">Aplicar Ajuste</button>
+                    </div>
+                </div>
+                <div>
+                    <div class="form-card" style="overflow-y: auto; max-height: 140px; margin-bottom:12px;">
+                        <h3 style="margin-bottom: 10px; font-size: 14px; color: var(--danger);">Excluir Integrantes</h3>
+                        <table id="tabelaMembrosAdmin"><thead><tr><th>Nome</th><th>Ação</th></tr></thead><tbody></tbody></table>
+                    </div>
+                    <div class="form-card" style="overflow-y: auto; max-height: 240px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h3 style="font-size: 14px;">Gerenciar Lançamentos</h3>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <input type="month" id="filtroMesAdmin" onchange="carregarHistoricoAdmin()" style="background:#0f172a; color:white; border:1px solid #334155; padding: 4px 6px; border-radius:6px; font-size:11px;">
+                                <button class="btn-warning" onclick="deletarMesInteiro()" style="padding: 5px 8px; font-size: 10px;">Excluir Mês</button>
+                            </div>
+                        </div>
+                        <table id="tabelaAdminExclusao"><thead><tr><th>Colaborador</th><th>Data</th><th>Saldo</th><th>Ação</th></tr></thead><tbody></tbody></table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://cmmixgspmqcvrdiqwukf.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNtbWl4Z3NwbXFjdnJkaXF3dWtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MTU2MDYsImV4cCI6MjA5NzI5MTYwNn0.L_b1LP9R7nC5AtlBRGa6U-HpVYizo9Vsl75PbSFGl5c";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let equipeMembros = ["Queila", "Rafael", "Julia", "Nathielly", "Rodriguinho", "FLA", "Lincoln", "Flavia M."];
+
+        const hojeData = new Date();
+        const mesAnoAtual = hojeData.toISOString().slice(0, 7);
+        
+        document.getElementById('turnoData').value = hojeData.toISOString().split('T')[0];
+        document.getElementById('filtroMesAdmin').value = mesAnoAtual;
+        document.getElementById('filtroMesDashboard').value = mesAnoAtual;
+        document.getElementById('filtroMesHistorico').value = mesAnoAtual;
+
+        async function inicializarSistema() {
+            atualizarDropdowns();
+            await carregarMembrosDaNuvem();
+            await carregarSaldosEfetivos();
+            processarHoras();
+        }
+
+        async function carregarMembrosDaNuvem() {
+            try {
+                const { data, error } = await _supabase.from('colaboradores').select('nome');
+                if (data && data.length > 0) {
+                    data.forEach(c => {
+                        if(!equipeMembros.includes(c.nome)) equipeMembros.push(c.nome);
+                    });
+                }
+            } catch(e) { console.log("Usando lista mestra local."); }
+            atualizarDropdowns();
+        }
+
+        function atualizarDropdowns() {
+            const s1 = document.getElementById('userSelect');
+            const s2 = document.getElementById('ajusteColab');
+            if(!s1 || !s2) return;
+            s1.innerHTML = ""; s2.innerHTML = "";
+            equipeMembros.forEach(m => {
+                s1.innerHTML += `<option value="${m}">${m}</option>`;
+                s2.innerHTML += `<option value="${m}">${m}</option>`;
+            });
+        }
+
+        function goToSlide(idx) {
+            document.querySelectorAll('.slide-container').forEach(s => s.classList.remove('active'));
+            document.getElementById('slide' + idx).classList.add('active');
+            if(idx !== 4) {
+                document.getElementById('lockScreen').style.display = 'block';
+                document.getElementById('adminContent').style.display = 'none';
+                document.getElementById('passGerente').value = '';
+            }
+            if(idx === 1) carregarSaldosEfetivos();
+            if(idx === 3) carregarHistoricoGeral();
+            if(idx === 4) { carregarHistoricoAdmin(); listarMembrosExclusao(); }
+        }
+
+        function autenticarGerente() {
+            if(document.getElementById('passGerente').value === "1234") {
+                document.getElementById('lockScreen').style.display = 'none';
+                document.getElementById('adminContent').style.display = 'grid';
+            } else { alert("Código incorreto!"); }
+        }
+
+        function atualizarLayoutTurno() {
+            const tipo = document.getElementById('diaTipo').value;
+            const almocoS = document.getElementById('hAlmocoS');
+            const almocoR = document.getElementById('hAlmocoR');
+            const saida = document.getElementById('hSaida');
+
+            if (tipo === 'aprendiz6h') {
+                almocoS.value = "12:00";
+                almocoR.value = "12:15";
+                saida.value = "14:15";
+            } else if (tipo === 'sabado4h') {
+                almocoS.value = "00:00";
+                almocoR.value = "00:00";
+                saida.value = "12:00";
+            } else if (tipo === 'extra') {
+                almocoS.value = "00:00";
+                almocoR.value = "00:00";
+                saida.value = "17:30";
+            } else {
+                almocoS.value = "12:00";
+                almocoR.value = "13:00";
+                saida.value = "17:30";
+            }
+            processarHoras();
+        }
+
+        function processarHoras() {
+            const e = parseMin(document.getElementById('hEntrada').value);
+            const as = parseMin(document.getElementById('hAlmocoS').value);
+            const ar = parseMin(document.getElementById('hAlmocoR').value);
+            const s = parseMin(document.getElementById('hSaida').value);
+            const tipo = document.getElementById('diaTipo').value;
+
+            let trabalhado = 0;
+            if (as === 0 || ar === 0 || ar <= as || s <= ar) {
+                trabalhado = s - e;
+            } else {
+                trabalhado = (as - e) + (s - ar);
+            }
+
+            if (trabalhado < 0 || isNaN(trabalhado)) trabalhado = 0;
+
+            let carga = 0;
+            if (tipo === 'semana8h30') carga = 510;
+            else if (tipo === 'semana8h') carga = 480;
+            else if (tipo === 'semana7h30') carga = 450;
+            else if (tipo === 'aprendiz6h') carga = 360;
+            else if (tipo === 'sabado4h') carga = 240;
+            else carga = 0;
+            
+            const saldo = trabalhado - carga;
+
+            document.getElementById('valTotal').innerText = formatMin(trabalhado);
+            const el = document.getElementById('valSaldo');
+            
+            if(saldo >= 0) {
+                el.innerText = "+" + formatMin(saldo);
+                el.className = "metric-value positivo-txt";
+            } else {
+                el.innerText = "-" + formatMin(Math.abs(saldo));
+                el.className = "metric-value negativo-txt";
+            }
+        }
+
+        function parseMin(t) { if(!t) return 0; const [h, m] = t.split(':').map(Number); return h * 60 + m; }
+        function formatMin(m) { const hrs = Math.floor(m / 60); const mins = m % 60; return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}`; }
+
+        async function adicionarMembro() {
+            const nome = document.getElementById('addNome').value.trim();
+            if(!nome) return;
+            try { await _supabase.from('colaboradores').insert([{ nome: nome }]); } catch(err) {}
+            if(!equipeMembros.includes(nome)) equipeMembros.push(nome);
+            document.getElementById('addNome').value = "";
+            alert("Membro incluído!");
+            atualizarDropdowns();
+            listarMembrosExclusao();
+        }
+
+        async function deletarMembro(nome) {
+            if(confirm(`Remover ${nome}?`)) {
+                try { await _supabase.from('colaboradores').delete().eq('nome', nome); } catch(e) {}
+                equipeMembros = equipeMembros.filter(item => item !== nome);
+                alert("Membro removido!");
+                atualizarDropdowns();
+                listarMembrosExclusao();
+                carregarSaldosEfetivos();
+            }
+        }
+
+        function listarMembrosExclusao() {
+            const tbody = document.querySelector('#tabelaMembrosAdmin tbody');
+            if(!tbody) return;
+            tbody.innerHTML = "";
+            equipeMembros.forEach(m => {
+                tbody.innerHTML += `<tr><td>${m}</td><td><button class="btn-danger" onclick="deletarMembro('${m}')">Remover</button></td></tr>`;
+            });
+        }
+
+        async function salvarTurno() {
+            const colab = document.getElementById('userSelect').value;
+            const dataV = document.getElementById('turnoData').value;
+            const tipo = document.getElementById('diaTipo').value;
+            const trabalhado = document.getElementById('valTotal').innerText;
+            const saldo = document.getElementById('valSaldo').innerText;
+            const campoJustificativa = document.getElementById('turnoJustificativa');
+            const justificativaV = campoJustificativa ? campoJustificativa.value.trim() : "";
+
+            let textoJornada = tipo;
+            if (tipo === 'semana8h30') textoJornada = 'Segunda a Sexta (08h30m)';
+            if (tipo === 'semana8h') textoJornada = 'Segunda a Sexta (08h00m)';
+            if (tipo === 'semana7h30') textoJornada = 'Segunda a Sexta (07h30m)';
+            if (tipo === 'aprendiz6h') textoJornada = 'Jovem Aprendiz (06h00m)';
+            if (tipo === 'sabado4h') textoJornada = 'Sábado (04h00m)';
+            if (tipo === 'extra') textoJornada = 'Fim de Semana (100% Extra)';
+
+            try {
+                const { error } = await _supabase.from('lancamentos').insert([{
+                    colaborador: String(colab),
+                    data: String(dataV),
+                    jornada: String(textoJornada),
+                    total_trabalhado: String(trabalhado),
+                    saldo: String(saldo),
+                    justificativa: String(justificativaV)
+                }]);
+                
+                if(error) throw error;
+                
+                alert("Lançamento gravado com sucesso!");
+                if(campoJustificativa) campoJustificativa.value = ""; 
+                
+                await carregarSaldosEfetivos();
+                goToSlide(1);
+            } catch (err) { 
+                console.error("Erro Supabase:", err);
+                alert("Erro ao gravar dados na nuvem."); 
+            }
+        }
+
+        async function salvarAjusteManual() {
+            const colab = document.getElementById('ajusteColab').value;
+            const sinal = document.getElementById('ajusteSinal').value;
+            const tempo = document.getElementById('ajusteTempo').value;
+            const hoje = new Date().toISOString().split('T')[0];
+
+            try {
+                const { error } = await _supabase.from('lancamentos').insert([{
+                    colaborador: colab,
+                    data: String(hoje),
+                    jornada: 'Ajuste Manual',
+                    total_trabalhado: String(tempo),
+                    saldo: String(sinal + tempo)
+                }]);
+                if(error) throw error;
+                alert("Ajuste applied!");
+                carregarHistoricoAdmin();
+            } catch(e) {}
+        }
+
+        async function deletarLancamento(id) {
+            if(confirm("Deseja deletar?")) {
+                await _supabase.from('lancamentos').delete().eq('id', id);
+                carregarHistoricoAdmin();
+            }
+        }
+
+        async function deletarMesInteiro() {
+            const mesSelecionado = document.getElementById('filtroMesAdmin').value;
+            if(!mesSelecionado) return;
+            if(confirm(`Deseja apagar TODOS os lançamentos do mês ${mesSelecionado}?`)) {
+                try {
+                    const { error } = await _supabase
+                        .from('lancamentos')
+                        .delete()
+                        .gte('data', `${mesSelecionado}-01`)
+                        .lte('data', `${mesSelecionado}-31`);
+                    if(error) throw error;
+                    alert("Dados do mês removidos!");
+                    carregarHistoricoAdmin();
+                } catch(e) { alert("Erro ao remover dados."); }
+            }
+        }
+
+        async function carregarSaldosEfetivos() {
+            const acum = {};
+            equipeMembros.forEach(n => acum[n] = 0);
+            
+            const mesFiltro = document.getElementById('filtroMesDashboard').value;
+
+            try {
+                let query = _supabase.from('lancamentos').select('*');
+                if (mesFiltro) {
+                    query = query.gte('data', `${mesFiltro}-01`).lte('data', `${mesFiltro}-31`);
+                }
+                
+                const { data } = await query;
+                if(data) {
+                    data.forEach(l => {
+                        if(acum[l.colaborador] !== undefined && l.saldo) {
+                            const saldoStr = String(l.saldo);
+                            const sinal = saldoStr.startsWith('-') ? -1 : 1;
+                            const puro = saldoStr.replace('+', '').replace('-', '');
+                            acum[l.colaborador] += (parseMin(puro) * sinal);
+                        }
+                    });
+                }
+            } catch(e) {}
+
+            const grid = document.getElementById('dashboardGrid');
+            if(!grid) return;
+            grid.innerHTML = "";
+
+            for (let i = 0; i < equipeMembros.length; i += 2) {
+                const m1 = equipeMembros[i];
+                const m2 = equipeMembros[i+1];
+                let card1 = m1 ? gerarHtmlCard(m1, acum[m1]) : "";
+                let card2 = m2 ? gerarHtmlCard(m2, acum[m2]) : "";
+                grid.innerHTML += `<div class="dupla-row">${card1}${card2}</div>`;
+            }
+        }
+
+        function gerarHtmlCard(nome, min) {
+            const sinal = min >= 0 ? "+" : "-";
+            const txtClass = min >= 0 ? "positivo-txt" : "negativo-txt";
+            const cardClass = min >= 0 ? "status-positivo" : "status-negativo";
+            return `<div class="colab-card ${cardClass}"><div><div class="colab-name">${nome}</div><div class="colab-role">Integrante</div></div><div class="colab-saldo ${txtClass}">${sinal}${formatMin(Math.abs(min))}</div></div>`;
+        }
+
+        async function carregarHistoricoGeral() {
+            const mesFiltro = document.getElementById('filtroMesHistorico').value;
+            try {
+                let query = _supabase.from('lancamentos').select('*').order('data', { ascending: false });
+                if (mesFiltro) {
+                    query = query.gte('data', `${mesFiltro}-01`).lte('data', `${mesFiltro}-31`);
+                }
+                
+                const { data } = await query;
+                const tbody = document.querySelector('#tabelaHistorico tbody');
+                if(!tbody) return;
+                tbody.innerHTML = "";
+                if(data) {
+                    data.forEach(l => {
+                        const saldoStr = String(l.saldo || "");
+                        const cls = saldoStr.startsWith('-') ? 'neg' : 'pos';
+                        const obs = l.justificativa ? l.justificativa : '-'; // Pega a justificativa do banco
+                        
+                        tbody.innerHTML += `<tr>
+                            <td>${l.colaborador}</td>
+                            <td>${l.data || ""}</td>
+                            <td>${l.jornada || ''}</td>
+                            <td>${l.total_trabalhado || ""}</td>
+                            <td><span class="badge ${cls}">${saldoStr}</span></td>
+                            <td style="color: var(--text-dim); font-style: italic;">${obs}</td>
+                        </tr>`;
+                    });
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function carregarHistoricoAdmin() {
+            const mesFiltro = document.getElementById('filtroMesAdmin').value;
+            try {
+                let query = _supabase.from('lancamentos').select('*').order('data', { ascending: false });
+                if (mesFiltro) {
+                    query = query.gte('data', `${mesFiltro}-01`).lte('data', `${mesFiltro}-31`);
+                }
+                const { data } = await query;
+                const tbody = document.querySelector('#tabelaAdminExclusao tbody');
+                if(!tbody) return;
+                tbody.innerHTML = "";
+                if(data) {
+                    data.forEach(l => {
+                        tbody.innerHTML += `<tr>
+                            <td>${l.colaborador}</td>
+                            <td>${l.data}</td>
+                            <td>${l.saldo}</td>
+                            <td><button class="btn-danger" onclick="deletarLancamento(${l.id})">Excluir</button></td>
+                        </tr>`;
+                    });
+                }
+            } catch(e) {}
+        }
+    </script>
+</body>
+</html>
