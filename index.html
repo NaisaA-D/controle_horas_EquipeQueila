@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Controle de Horas - Equipe Queila</title>
     
-    <!-- Ícone da Capa / Favicon da Aba -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><path fill='%2310b981' d='M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200zm61.8-104.4l-84.9-61.1c-3.1-2.2-4.9-5.9-4.9-9.7V116c0-6.6 5.4-12 12-12h32c6.6 0 12 5.4 12 12v117.7l67.7 48.7c5.4 3.9 6.5 11.4 2.6 16.8l-19.8 27.6c-3.9 5.3-11.4 6.5-16.8 2.6z'/></svg>">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,6 +16,7 @@
         :root {
             --bg-dark: #0f172a;
             --bg-card: #1e293b;
+            --bg-inner: #111c30;
             --accent: #10b981;
             --text-main: #f8fafc;
             --text-dim: #94a3b8;
@@ -26,251 +26,391 @@
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
-        /* Fundo externo de cor clara */
         body { 
-            background-color: #f1f5f9; 
+            background-color: var(--bg-dark); 
+            color: var(--text-main);
             font-family: 'Inter', sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            overflow: hidden; 
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
         }
         
-        /* Força o ícone do calendário a ficar branco */
         input[type="date"]::-webkit-calendar-picker-indicator,
         input[type="month"]::-webkit-calendar-picker-indicator {
             filter: invert(1) !important;
             -webkit-filter: invert(1) !important;
             cursor: pointer !important;
         }
-   
-        /* LAYOUT COMPACTO 1024x576 */
-        .slide-container { 
-            width: 1024px; 
-            height: 576px; 
-            background-color: var(--bg-dark); 
-            color: var(--text-main); 
-            position: relative; 
-            display: none; 
-            overflow: hidden; 
-            border: 1px solid #cbd5e1; 
-            border-radius: 12px; 
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-        }
-        .slide-container.active { display: flex; }
-        
-        .sidebar { width: 70px; background-color: var(--sidebar-bg); height: 100%; display: flex; flex-direction: column; align-items: center; padding-top: 20px; gap: 15px; border-right: 1px solid #1e293b; z-index: 10; }
-        .nav-btn { width: 42px; height: 42px; border-radius: 10px; background: transparent; border: none; color: var(--text-dim); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .nav-btn:hover, .nav-btn.active { background: rgba(16, 185, 129, 0.15); color: var(--accent); }
-        
-        .main-content { flex-grow: 1; padding: 25px 35px; display: flex; flex-direction: column; overflow-y: auto; }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #1e293b; padding-bottom: 10px; }
-        .slide-title { font-family: 'Urbanist', sans-serif; font-size: 22px; font-weight: 700; }
-        
-        .filtro-topo-container { display: flex; align-items: center; gap: 10px; }
-        .input-filtro-mes { background: #0f172a; color: white; border: 1px solid #334155; padding: 6px 10px; border-radius: 6px; font-size: 12px; outline: none; font-family: 'Inter', sans-serif; }
 
-        .painel-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 5px; }
-        .dupla-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: rgba(30, 41, 59, 0.5); padding: 12px; border-radius: 12px; border: 1px solid #1e293b; }
-        .colab-card { background: var(--bg-card); border: 1px solid #334155; padding: 12px 14px; border-radius: 10px; display: flex; flex-direction: column; justify-content: space-between; min-height: 100px; }
-        .colab-header { display: flex; justify-content: space-between; align-items: flex-start; }
-        .colab-name { font-size: 15px; font-weight: 600; color: var(--text-main); }
-        .colab-role { font-size: 11px; color: var(--text-dim); text-transform: uppercase; }
+        /* LAYOUT FULLSCREEN */
+        .app-container {
+            display: flex;
+            width: 100vw;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .sidebar { 
+            width: 70px; 
+            background-color: var(--sidebar-bg); 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding-top: 25px; 
+            gap: 15px; 
+            border-right: 1px solid #1e293b; 
+            z-index: 100; 
+            flex-shrink: 0; 
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+        }
+
+        .nav-btn { 
+            width: 46px; 
+            height: 46px; 
+            border-radius: 12px; 
+            background: transparent; 
+            border: none; 
+            color: var(--text-dim); 
+            font-size: 18px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            transition: all 0.2s ease;
+        }
+        .nav-btn:hover, .nav-btn.active { 
+            background: rgba(16, 185, 129, 0.15); 
+            color: var(--accent); 
+        }
+
+        .main-wrapper {
+            margin-left: 70px;
+            flex-grow: 1;
+            padding: 30px;
+            width: calc(100vw - 70px);
+            min-height: 100vh;
+        }
+
+        .slide-container { 
+            display: none; 
+            width: 100%;
+        }
+        .slide-container.active { 
+            display: block; 
+        }
         
-        .saldos-wrapper { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 8px; }
-        .saldo-block { display: flex; flex-direction: column; }
-        .saldo-lbl { font-size: 9px; text-transform: uppercase; color: var(--text-dim); font-weight: 600; letter-spacing: 0.5px; }
+        .top-bar { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 25px; 
+            border-bottom: 1px solid #1e293b; 
+            padding-bottom: 15px; 
+            flex-wrap: wrap; 
+            gap: 15px; 
+        }
+        .slide-title { 
+            font-family: 'Urbanist', sans-serif; 
+            font-size: 24px; 
+            font-weight: 700; 
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .filtro-topo-container { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            background: var(--bg-card);
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+        .input-filtro-mes { 
+            background: transparent; 
+            color: white; 
+            border: none; 
+            font-size: 13px; 
+            outline: none; 
+            font-family: 'Inter', sans-serif; 
+        }
+
+        /* GRID DA DASHBOARD */
+        .painel-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+            gap: 20px; 
+        }
+
+        /* CARDS REORGANIZADOS E LIMPOS */
+        .colab-card { 
+            background: var(--bg-card); 
+            border: 1px solid #334155; 
+            padding: 18px; 
+            border-radius: 14px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 14px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .colab-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .colab-header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+        }
+        .colab-name { 
+            font-size: 18px; 
+            font-weight: 700; 
+            color: var(--text-main); 
+            font-family: 'Urbanist', sans-serif;
+        }
+        .colab-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        /* BLOCO INTERNO DE SALDOS NO BALÃO */
+        .saldos-inner-box {
+            background: var(--bg-inner);
+            border-radius: 10px;
+            padding: 12px 14px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .saldo-block { display: flex; flex-direction: column; gap: 2px; }
+        .saldo-lbl { font-size: 10px; text-transform: uppercase; color: var(--text-dim); font-weight: 600; letter-spacing: 0.5px; }
         .colab-saldo { font-family: 'Urbanist', sans-serif; font-size: 18px; font-weight: 700; }
-        .colab-saldo-acum { font-family: 'Urbanist', sans-serif; font-size: 15px; font-weight: 700; opacity: 0.85; }
         
-        .colab-card.status-positivo { border-left: 4px solid var(--accent); }
-        .colab-card.status-negativo { border-left: 4px solid var(--danger); }
+        .colab-card.status-positivo { border-top: 3px solid var(--accent); }
+        .colab-card.status-negativo { border-top: 3px solid var(--danger); }
         .positivo-txt { color: var(--accent); }
         .negativo-txt { color: var(--danger); }
 
-        .sim-container { display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; }
-        .form-card { background: var(--bg-card); border: 1px solid #334155; padding: 18px; border-radius: 12px; margin-bottom: 10px; }
-        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
-        .input-group { margin-bottom: 10px; display: flex; flex-direction: column; }
-        .input-group label { font-size: 10px; text-transform: uppercase; color: var(--text-dim); font-weight: 600; margin-bottom: 4px; }
-        .input-group select, .input-group input { background: #0f172a; border: 1px solid #334155; color: white; padding: 8px 10px; border-radius: 6px; font-size: 13px; outline: none; }
+        /* OUTRAS TELAS */
+        .sim-container { display: grid; grid-template-columns: 1.2fr 1fr; gap: 25px; }
+        .form-card { background: var(--bg-card); border: 1px solid #334155; padding: 22px; border-radius: 14px; margin-bottom: 15px; }
+        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px; }
+        .input-group { margin-bottom: 12px; display: flex; flex-direction: column; }
+        .input-group label { font-size: 11px; text-transform: uppercase; color: var(--text-dim); font-weight: 600; margin-bottom: 6px; }
+        .input-group select, .input-group input { background: #0f172a; border: 1px solid #334155; color: white; padding: 10px 12px; border-radius: 8px; font-size: 13px; outline: none; }
         
-        .resumo-card { background: #0b1329; border: 1px solid rgba(16, 185, 129, 0.2); padding: 20px; border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between; }
-        .metric-value { font-size: 32px; font-weight: 700; font-family: 'Urbanist', sans-serif; margin-top: 3px; }
-        .btn-submit { background: var(--accent); color: #020617; border: none; padding: 12px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%; text-transform: uppercase; }
-        
-        table { width: 100%; border-collapse: collapse; background: var(--bg-card); border-radius: 8px; overflow: hidden; border: 1px solid #334155; }
-        th { background: #111c30; padding: 10px 14px; font-size: 11px; text-transform: uppercase; color: var(--text-dim); text-align: left; }
-        td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid #334155; }
-        .badge { padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .resumo-card { background: #0b1329; border: 1px solid rgba(16, 185, 129, 0.2); padding: 25px; border-radius: 14px; display: flex; flex-direction: column; justify-content: space-between; }
+        .metric-value { font-size: 36px; font-weight: 700; font-family: 'Urbanist', sans-serif; margin-top: 4px; }
+        .btn-submit { background: var(--accent); color: #020617; border: none; padding: 14px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%; text-transform: uppercase; transition: opacity 0.2s; }
+        .btn-submit:hover { opacity: 0.9; }
+
+        .table-responsive { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; background: var(--bg-card); border-radius: 10px; overflow: hidden; border: 1px solid #334155; }
+        th { background: #111c30; padding: 12px 16px; font-size: 11px; text-transform: uppercase; color: var(--text-dim); text-align: left; }
+        td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid #334155; }
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
         .badge.pos { background: rgba(16, 185, 129, 0.15); color: var(--accent); }
         .badge.neg { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
-        .btn-danger { background: var(--danger); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+        .btn-danger { background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; }
         .btn-warning { background: var(--warning); color: #020617; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; }
+
+        /* MÓVEL & RESPONSIVIDADE (CELULAR) */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: 60px;
+                min-height: 60px;
+                flex-direction: row;
+                justify-content: space-around;
+                padding-top: 0;
+                border-right: none;
+                border-top: 1px solid #1e293b;
+                top: auto;
+                bottom: 0;
+            }
+
+            .main-wrapper {
+                margin-left: 0;
+                width: 100vw;
+                padding: 15px;
+                padding-bottom: 80px; /* Espaço para o menu inferior no celular */
+            }
+
+            .slide-title { font-size: 18px; }
+            .painel-grid { grid-template-columns: 1fr; }
+            .sim-container { grid-template-columns: 1fr; }
+            #adminContent { grid-template-columns: 1fr !important; }
+            .input-row { grid-template-columns: 1fr; gap: 0; }
+        }
     </style>
 </head>
 <body onload="inicializarSistema()">
 
-    <div class="slide-container active" id="slide1">
+    <div class="app-container">
+        <!-- BARRA LATERAL / INFERIOR NO MOBILE -->
         <div class="sidebar">
-            <button class="nav-btn active" onclick="goToSlide(1)"><i class="fa-solid fa-table-columns"></i></button>
-            <button class="nav-btn" onclick="goToSlide(2)"><i class="fa-solid fa-calculator"></i></button>
-            <button class="nav-btn" onclick="goToSlide(3)"><i class="fa-solid fa-clock-rotate-left"></i></button>
-            <button class="nav-btn" onclick="goToSlide(4)"><i class="fa-solid fa-users-gear"></i></button>
+            <button class="nav-btn active" onclick="goToSlide(1)" title="Dashboard"><i class="fa-solid fa-chart-pie"></i></button>
+            <button class="nav-btn" onclick="goToSlide(2)" title="Simulador e Lançamento"><i class="fa-solid fa-calculator"></i></button>
+            <button class="nav-btn" onclick="goToSlide(3)" title="Histórico"><i class="fa-solid fa-clock-rotate-left"></i></button>
+            <button class="nav-btn" onclick="goToSlide(4)" title="Administração"><i class="fa-solid fa-users-gear"></i></button>
         </div>
-        <div class="main-content">
-            <div class="top-bar">
-                <div class="slide-title">Dashboard Controle de Horas - Equipe Queila <span style="color:var(--accent); font-size:12px; margin-left: 10px;"><i class="fa-solid fa-chart-pie"></i> Sincronizado</span></div>
-                <div class="filtro-topo-container">
-                    <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600;">Filtrar Mês:</span>
-                    <input type="month" id="filtroMesDashboard" class="input-filtro-mes" onchange="carregarSaldosEfetivos()">
-                </div>
-            </div>
-            <div class="painel-grid" id="dashboardGrid"></div>
-        </div>
-    </div>
 
-    <div class="slide-container" id="slide2">
-        <div class="sidebar">
-            <button class="nav-btn" onclick="goToSlide(1)"><i class="fa-solid fa-table-columns"></i></button>
-            <button class="nav-btn active" onclick="goToSlide(2)"><i class="fa-solid fa-calculator"></i></button>
-            <button class="nav-btn" onclick="goToSlide(3)"><i class="fa-solid fa-clock-rotate-left"></i></button>
-            <button class="nav-btn" onclick="goToSlide(4)"><i class="fa-solid fa-users-gear"></i></button>
-        </div>
-        <div class="main-content">
-            <div class="top-bar"><div class="slide-title">Simulador e Lançamento de Horas</div></div>
-            <div class="sim-container">
-                <div class="form-card">
-                    <div class="input-row">
-                        <div class="input-group"><label>Colaborador</label><select id="userSelect"></select></div>
-                        <div class="input-group"><label>Data</label><input type="date" id="turnoData"></div>
+        <!-- CONTEÚDO PRINCIPAL (FULLSCREEN) -->
+        <div class="main-wrapper">
+            
+            <!-- ABA 1: DASHBOARD -->
+            <div class="slide-container active" id="slide1">
+                <div class="top-bar">
+                    <div class="slide-title">
+                        <span>Controle de Horas</span>
+                        <span style="color:var(--accent); font-size:12px; font-weight:normal; background: rgba(16, 185, 129, 0.1); padding: 4px 10px; border-radius: 20px;"><i class="fa-solid fa-circle" style="font-size: 8px;"></i> Sincronizado</span>
                     </div>
-                    <div class="input-group">
-                        <label>Jornada Padrão</label>
-                        <select id="diaTipo" onchange="atualizarLayoutTurno()">
-                            <option value="semana8h30">Segunda a Sexta (Carga: 08h 30m)</option>
-                            <option value="semana8h">Segunda a Sexta (Carga: 08h 00m)</option>
-                            <option value="semana7h30">Segunda a Sexta (Carga: 07h 30m)</option>
-                            <option value="aprendiz6h">Jovem Aprendiz (Carga: 06h 00m)</option>
-                            <option value="sabado4h">Sábado (Carga: 04h 00m)</option>
-                            <option value="extra">Fim de Semana (100% Extra)</option>
-                        </select>
-                    </div>
-                    <div class="input-row">
-                        <div class="input-group"><label>Entrada</label><input type="time" id="hEntrada" value="08:00" onchange="processarHoras()"></div>
-                        <div class="input-group"><label>Saída Intervalo</label><input type="time" id="hAlmocoS" value="12:00" onchange="processarHoras()"></div>
-                    </div>
-                    <div class="input-row">
-                        <div class="input-group"><label>Retorno Intervalo</label><input type="time" id="hAlmocoR" value="13:00" onchange="processarHoras()"></div>
-                        <div class="input-group"><label>Saída Final</label><input type="time" id="hSaida" value="17:30" onchange="processarHoras()"></div>
-                    </div>
-                    <div class="input-group" style="margin-top: 10px;">
-                        <label>Justificativa / Observação</label>
-                        <input type="text" id="turnoJustificativa" placeholder="Ex: Atestado, Viagem, Esquecimento...">
+                    <div class="filtro-topo-container">
+                        <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600;">Filtrar Mês:</span>
+                        <input type="month" id="filtroMesDashboard" class="input-filtro-mes" onchange="carregarSaldosEfetivos()">
                     </div>
                 </div>
-                <div class="resumo-card">
-                    <div>
-                        <div style="font-size: 10px; text-transform: uppercase; color: var(--text-dim)">Total Realizado</div>
-                        <div class="metric-value" id="valTotal">00:00</div>
-                        <div style="font-size: 10px; text-transform: uppercase; color: var(--text-dim); margin-top: 15px;">Saldo do Lançamento</div>
-                        <div class="metric-value" id="valSaldo">00:00</div>
-                    </div>
-                    <button class="btn-submit" onclick="salvarTurno()">Gravar Turno na Nuvem</button>
-                </div>
+                <div class="painel-grid" id="dashboardGrid"></div>
             </div>
-        </div>
-    </div>
 
-    <div class="slide-container" id="slide3">
-        <div class="sidebar">
-            <button class="nav-btn" onclick="goToSlide(1)"><i class="fa-solid fa-table-columns"></i></button>
-            <button class="nav-btn" onclick="goToSlide(2)"><i class="fa-solid fa-calculator"></i></button>
-            <button class="nav-btn active" onclick="goToSlide(3)"><i class="fa-solid fa-clock-rotate-left"></i></button>
-            <button class="nav-btn" onclick="goToSlide(4)"><i class="fa-solid fa-users-gear"></i></button>
-        </div>
-        <div class="main-content">
-            <div class="top-bar">
-                <div class="slide-title">Histórico de Movimentações</div>
-                <div class="filtro-topo-container">
-                    <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600;">Mês:</span>
-                    <input type="month" id="filtroMesHistorico" class="input-filtro-mes" onchange="carregarHistoricoGeral()">
-                </div>
-            </div>
-            <div style="overflow-y: auto; max-height: 440px;">
-                <table id="tabelaHistorico">
-                    <thead>
-                        <tr>
-                            <th>Colaborador</th>
-                            <th>Data</th>
-                            <th>Tipo</th>
-                            <th>Trabalhado</th>
-                            <th>Saldo Gerado</th>
-                            <th>Obs / Justificativa</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <div class="slide-container" id="slide4">
-        <div class="sidebar">
-            <button class="nav-btn" onclick="goToSlide(1)"><i class="fa-solid fa-table-columns"></i></button>
-            <button class="nav-btn" onclick="goToSlide(2)"><i class="fa-solid fa-calculator"></i></button>
-            <button class="nav-btn" onclick="goToSlide(3)"><i class="fa-solid fa-clock-rotate-left"></i></button>
-            <button class="nav-btn active" onclick="goToSlide(4)"><i class="fa-solid fa-users-gear"></i></button>
-        </div>
-        <div class="main-content">
-            <div class="top-bar"><div class="slide-title">Painel Administrativo do Gerente</div></div>
-            <div id="lockScreen">
-                <div class="form-card" style="max-width: 350px; margin: 30px auto; text-align: center;">
-                    <div class="input-group">
-                        <label>Código de Segurança do Gerente</label>
-                        <input type="password" id="passGerente" style="text-align:center;" placeholder="Digite o código">
-                    </div>
-                    <button class="btn-submit" onclick="autenticarGerente()">Validar Acesso</button>
-                </div>
-            </div>
-            <div id="adminContent" style="display: none; grid-template-columns: 1fr 1.4fr; gap: 20px;">
-                <div>
+            <!-- ABA 2: SIMULADOR E LANÇAMENTO -->
+            <div class="slide-container" id="slide2">
+                <div class="top-bar"><div class="slide-title">Simulador e Lançamento de Horas</div></div>
+                <div class="sim-container">
                     <div class="form-card">
-                        <h3 style="margin-bottom: 10px; font-size: 14px; color: var(--accent);">Incluir Novo Integrante</h3>
-                        <div class="input-group">
-                            <label>Nome do Colaborador</label>
-                            <input type="text" id="addNome" placeholder="Ex: Rafael">
-                        </div>
-                        <button class="btn-submit" onclick="adicionarMembro()">Adicionar Equipe</button>
-                    </div>
-                    <div class="form-card">
-                        <h3 style="margin-bottom: 10px; font-size: 14px; color: var(--accent);">Ajuste Manual</h3>
-                        <div class="input-group"><label>Colaborador</label><select id="ajusteColab"></select></div>
                         <div class="input-row">
-                            <div class="input-group"><label>Sinal</label><select id="ajusteSinal"><option value="+">Crédito (+)</option><option value="-">Débito (-)</option></select></div>
-                            <div class="input-group"><label>Tempo</label><input type="time" id="ajusteTempo" value="01:00"></div>
+                            <div class="input-group"><label>Colaborador</label><select id="userSelect"></select></div>
+                            <div class="input-group"><label>Data</label><input type="date" id="turnoData"></div>
                         </div>
-                        <button class="btn-submit" onclick="salvarAjusteManual()">Aplicar Ajuste</button>
-                    </div>
-                </div>
-                <div>
-                    <div class="form-card" style="overflow-y: auto; max-height: 140px; margin-bottom:12px;">
-                        <h3 style="margin-bottom: 10px; font-size: 14px; color: var(--danger);">Excluir Integrantes</h3>
-                        <table id="tabelaMembrosAdmin"><thead><tr><th>Nome</th><th>Ação</th></tr></thead><tbody></tbody></table>
-                    </div>
-                    <div class="form-card" style="overflow-y: auto; max-height: 240px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <h3 style="font-size: 14px;">Gerenciar Lançamentos</h3>
-                            <div style="display: flex; gap: 8px; align-items: center;">
-                                <input type="month" id="filtroMesAdmin" onchange="carregarHistoricoAdmin()" style="background:#0f172a; color:white; border:1px solid #334155; padding: 4px 6px; border-radius:6px; font-size:11px;">
-                                <button class="btn-warning" onclick="deletarMesInteiro()" style="padding: 5px 8px; font-size: 10px;">Excluir Mês</button>
-                            </div>
+                        <div class="input-group">
+                            <label>Jornada Padrão</label>
+                            <select id="diaTipo" onchange="atualizarLayoutTurno()">
+                                <option value="semana8h30">Segunda a Sexta (Carga: 08h 30m)</option>
+                                <option value="semana8h">Segunda a Sexta (Carga: 08h 00m)</option>
+                                <option value="semana7h30">Segunda a Sexta (Carga: 07h 30m)</option>
+                                <option value="aprendiz6h">Jovem Aprendiz (Carga: 06h 00m)</option>
+                                <option value="sabado4h">Sábado (Carga: 04h 00m)</option>
+                                <option value="extra">Fim de Semana (100% Extra)</option>
+                            </select>
                         </div>
-                        <table id="tabelaAdminExclusao"><thead><tr><th>Colaborador</th><th>Data</th><th>Saldo</th><th>Ação</th></tr></thead><tbody></tbody></table>
+                        <div class="input-row">
+                            <div class="input-group"><label>Entrada</label><input type="time" id="hEntrada" value="08:00" onchange="processarHoras()"></div>
+                            <div class="input-group"><label>Saída Intervalo</label><input type="time" id="hAlmocoS" value="12:00" onchange="processarHoras()"></div>
+                        </div>
+                        <div class="input-row">
+                            <div class="input-group"><label>Retorno Intervalo</label><input type="time" id="hAlmocoR" value="13:00" onchange="processarHoras()"></div>
+                            <div class="input-group"><label>Saída Final</label><input type="time" id="hSaida" value="17:30" onchange="processarHoras()"></div>
+                        </div>
+                        <div class="input-group" style="margin-top: 10px;">
+                            <label>Justificativa / Observação</label>
+                            <input type="text" id="turnoJustificativa" placeholder="Ex: Atestado, Viagem, Esquecimento...">
+                        </div>
+                    </div>
+                    <div class="resumo-card">
+                        <div>
+                            <div style="font-size: 11px; text-transform: uppercase; color: var(--text-dim)">Total Realizado</div>
+                            <div class="metric-value" id="valTotal">00:00</div>
+                            <div style="font-size: 11px; text-transform: uppercase; color: var(--text-dim); margin-top: 20px;">Saldo do Lançamento</div>
+                            <div class="metric-value" id="valSaldo">00:00</div>
+                        </div>
+                        <button class="btn-submit" onclick="salvarTurno()">Gravar Turno na Nuvem</button>
                     </div>
                 </div>
             </div>
+
+            <!-- ABA 3: HISTÓRICO -->
+            <div class="slide-container" id="slide3">
+                <div class="top-bar">
+                    <div class="slide-title">Histórico de Movimentações</div>
+                    <div class="filtro-topo-container">
+                        <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600;">Filtrar Mês:</span>
+                        <input type="month" id="filtroMesHistorico" class="input-filtro-mes" onchange="carregarHistoricoGeral()">
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table id="tabelaHistorico">
+                        <thead>
+                            <tr>
+                                <th>Colaborador</th>
+                                <th>Data</th>
+                                <th>Tipo</th>
+                                <th>Trabalhado</th>
+                                <th>Saldo Gerado</th>
+                                <th>Obs / Justificativa</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ABA 4: ADMIN -->
+            <div class="slide-container" id="slide4">
+                <div class="top-bar"><div class="slide-title">Painel Administrativo do Gerente</div></div>
+                <div id="lockScreen">
+                    <div class="form-card" style="max-width: 380px; margin: 40px auto; text-align: center;">
+                        <div class="input-group">
+                            <label>Código de Segurança do Gerente</label>
+                            <input type="password" id="passGerente" style="text-align:center;" placeholder="Digite o código">
+                        </div>
+                        <button class="btn-submit" onclick="autenticarGerente()">Validar Acesso</button>
+                    </div>
+                </div>
+                <div id="adminContent" style="display: none; grid-template-columns: 1fr 1.4fr; gap: 20px;">
+                    <div>
+                        <div class="form-card">
+                            <h3 style="margin-bottom: 12px; font-size: 15px; color: var(--accent);">Incluir Novo Integrante</h3>
+                            <div class="input-group">
+                                <label>Nome do Colaborador</label>
+                                <input type="text" id="addNome" placeholder="Ex: Rafael">
+                            </div>
+                            <button class="btn-submit" onclick="adicionarMembro()">Adicionar Equipe</button>
+                        </div>
+                        <div class="form-card">
+                            <h3 style="margin-bottom: 12px; font-size: 15px; color: var(--accent);">Ajuste Manual</h3>
+                            <div class="input-group"><label>Colaborador</label><select id="ajusteColab"></select></div>
+                            <div class="input-row">
+                                <div class="input-group"><label>Sinal</label><select id="ajusteSinal"><option value="+">Crédito (+)</option><option value="-">Débito (-)</option></select></div>
+                                <div class="input-group"><label>Tempo</label><input type="time" id="ajusteTempo" value="01:00"></div>
+                            </div>
+                            <button class="btn-submit" onclick="salvarAjusteManual()">Aplicar Ajuste</button>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-card table-responsive" style="overflow-y: auto; max-height: 180px; margin-bottom:15px;">
+                            <h3 style="margin-bottom: 12px; font-size: 15px; color: var(--danger);">Excluir Integrantes</h3>
+                            <table id="tabelaMembrosAdmin"><thead><tr><th>Nome</th><th>Ação</th></tr></thead><tbody></tbody></table>
+                        </div>
+                        <div class="form-card table-responsive" style="overflow-y: auto; max-height: 280px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                                <h3 style="font-size: 15px;">Gerenciar Lançamentos</h3>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <input type="month" id="filtroMesAdmin" onchange="carregarHistoricoAdmin()" style="background:#0f172a; color:white; border:1px solid #334155; padding: 6px 8px; border-radius:6px; font-size:12px;">
+                                    <button class="btn-warning" onclick="deletarMesInteiro()" style="padding: 6px 10px; font-size: 11px;">Excluir Mês</button>
+                                </div>
+                            </div>
+                            <table id="tabelaAdminExclusao"><thead><tr><th>Colaborador</th><th>Data</th><th>Saldo</th><th>Ação</th></tr></thead><tbody></tbody></table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -321,7 +461,11 @@
 
         function goToSlide(idx) {
             document.querySelectorAll('.slide-container').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            
             document.getElementById('slide' + idx).classList.add('active');
+            document.querySelectorAll('.nav-btn')[idx - 1].classList.add('active');
+
             if(idx !== 4) {
                 document.getElementById('lockScreen').style.display = 'block';
                 document.getElementById('adminContent').style.display = 'none';
@@ -533,40 +677,42 @@
             const mesFiltro = document.getElementById('filtroMesDashboard').value;
 
             try {
-                // Busca TODOS os lançamentos para calcular o Acumulado Geral e o do Mês
-                const { data } = await _supabase.from('lancamentos').select('*');
+                // Ordenação cronológica para contabilidade correta de débito/crédito
+                const { data } = await _supabase
+                    .from('lancamentos')
+                    .select('*')
+                    .order('data', { ascending: true });
                 
                 if(data) {
                     data.forEach(l => {
                         if(acumTotal[l.colaborador] !== undefined && l.saldo) {
-                            const saldoStr = String(l.saldo);
-                            const sinal = saldoStr.startsWith('-') ? -1 : 1;
+                            const saldoStr = String(l.saldo).trim();
+                            const isNegativo = saldoStr.startsWith('-');
                             const puro = saldoStr.replace('+', '').replace('-', '');
-                            const minutos = (parseMin(puro) * sinal);
                             
-                            // Soma no Acumulado Total
+                            // Aplica sinal positivo ou negativo nos minutos
+                            const minutos = parseMin(puro) * (isNegativo ? -1 : 1);
+                            
+                            // Soma algébrica contínua (compensação de saldo)
                             acumTotal[l.colaborador] += minutos;
 
-                            // Soma no Acumulado do Mês (se corresponder ao filtro)
                             if (mesFiltro && l.data && l.data.startsWith(mesFiltro)) {
                                 acumMes[l.colaborador] += minutos;
                             }
                         }
                     });
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.error("Erro ao carregar saldos:", e);
+            }
 
             const grid = document.getElementById('dashboardGrid');
             if(!grid) return;
             grid.innerHTML = "";
 
-            for (let i = 0; i < equipeMembros.length; i += 2) {
-                const m1 = equipeMembros[i];
-                const m2 = equipeMembros[i+1];
-                let card1 = m1 ? gerarHtmlCard(m1, acumMes[m1], acumTotal[m1]) : "";
-                let card2 = m2 ? gerarHtmlCard(m2, acumMes[m2], acumTotal[m2]) : "";
-                grid.innerHTML += `<div class="dupla-row">${card1}${card2}</div>`;
-            }
+            equipeMembros.forEach(membro => {
+                grid.innerHTML += gerarHtmlCard(membro, acumMes[membro], acumTotal[membro]);
+            });
         }
 
         function gerarHtmlCard(nome, minMes, minTotal) {
@@ -576,24 +722,23 @@
             const sinalTotal = minTotal >= 0 ? "+" : "-";
             const txtClassTotal = minTotal >= 0 ? "positivo-txt" : "negativo-txt";
             
-            const cardClass = minMes >= 0 ? "status-positivo" : "status-negativo";
+            const cardClass = minTotal >= 0 ? "status-positivo" : "status-negativo";
+            const inicial = nome ? nome.charAt(0).toUpperCase() : "?";
             
             return `
             <div class="colab-card ${cardClass}">
                 <div class="colab-header">
-                    <div>
-                        <div class="colab-name">${nome}</div>
-                        <div class="colab-role">Integrante</div>
-                    </div>
+                    <div class="colab-name">${nome}</div>
+                    <div class="colab-avatar">${inicial}</div>
                 </div>
-                <div class="saldos-wrapper">
+                <div class="saldos-inner-box">
                     <div class="saldo-block">
                         <span class="saldo-lbl">Mês Selecionado</span>
                         <span class="colab-saldo ${txtClassMes}">${sinalMes}${formatMin(Math.abs(minMes))}</span>
                     </div>
                     <div class="saldo-block" style="text-align: right;">
                         <span class="saldo-lbl">Acumulado Geral</span>
-                        <span class="colab-saldo-acum ${txtClassTotal}">${sinalTotal}${formatMin(Math.abs(minTotal))}</span>
+                        <span class="colab-saldo ${txtClassTotal}">${sinalTotal}${formatMin(Math.abs(minTotal))}</span>
                     </div>
                 </div>
             </div>`;
